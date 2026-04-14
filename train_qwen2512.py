@@ -612,28 +612,6 @@ def main():
         args.pretrained_model_name_or_path,
         torch_dtype=torch.bfloat16,
     )
-    # #region agent log
-    _agent_mem_log("after pipeline from_pretrained", "H1")
-    # #endregion
-
-    # 释放 pipeline 自带的 transformer 再加载自定义权重，避免两份完整权重同时驻留内存触发 OOM SIGKILL
-    transformer_cls = pipeline.transformer.__class__
-    del pipeline.transformer
-    gc.collect()
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
-    # #region agent log
-    _agent_mem_log("after del pipeline.transformer + gc", "H1")
-    # #endregion
-
-    custom_transformer = transformer_cls.from_pretrained(
-        "/data/yangel/t2i-training/runs/qwen_image_ti2/all-100000",
-        torch_dtype=torch.bfloat16,
-    )
-    pipeline.transformer = custom_transformer
-    # #region agent log
-    _agent_mem_log("after custom transformer from_pretrained", "H1")
-    # #endregion
 
     # 冻结所有组件
     pipeline.vae.requires_grad_(False)
